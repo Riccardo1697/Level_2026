@@ -1,0 +1,52 @@
+﻿<Window x:Class="Level_2026.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Level 2026 - Livellazione"
+        Height="700" Width="1100">
+
+    <Grid Margin="10">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="150"/>
+        </Grid.RowDefinitions>
+
+        <!-- TOP BAR -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+            <Button Content="Carica Excel" Width="120" Margin="0,0,10,0" Click="LoadExcel_Click"/>
+            <Button Content="Compensa" Width="120" Click="RunWLS_Click"/>
+        </StackPanel>
+
+        <!-- MAIN AREA -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- OBSERVATIONS -->
+            <GroupBox Header="Osservazioni" Margin="0,0,5,0">
+                <DataGrid x:Name="ObsGrid"
+                          IsReadOnly="True"
+                          AutoGenerateColumns="True"/>
+            </GroupBox>
+
+            <!-- RESULTS -->
+            <GroupBox Header="Risultati" Grid.Column="1" Margin="5,0,0,0">
+                <DataGrid x:Name="ResGrid"
+                          IsReadOnly="True"
+                          AutoGenerateColumns="True"/>
+            </GroupBox>
+        </Grid>
+
+        <!-- LOG -->
+        <GroupBox Header="Log" Grid.Row="2" Margin="0,10,0,0">
+            <TextBox x:Name="LogBox"
+                     FontFamily="Consolas"
+                     IsReadOnly="True"
+                     VerticalScrollBarVisibility="Auto"/>
+        </GroupBox>
+
+    </Grid>
+</Window>
