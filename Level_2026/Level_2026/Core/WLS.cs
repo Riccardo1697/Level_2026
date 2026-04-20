@@ -16,7 +16,8 @@ namespace Level_2026.Core
     {
         public static WLSResult Adjust(
             List<Observation> observations,
-            Dictionary<string, double> fixedPoints)
+            Dictionary<string, double> fixedPoints,
+            WeightType weightType)
         {
             // ----------------------------
             // 1. NODI E INCOGNITE
@@ -64,9 +65,25 @@ namespace Level_2026.Core
 
                 b[i] = rhs;
 
-                // PESI (qui puoi cambiare logica)
+                // ----------------------------
+                // PESI
+                // ----------------------------
                 double d = Math.Max(o.Dist, 1e-12);
-                w[i] = 1.0 / d;
+
+                switch (weightType)
+                {
+                    case WeightType.Constant:
+                        w[i] = 1.0;
+                        break;
+
+                    case WeightType.InverseDistance:
+                        w[i] = 1.0 / d;
+                        break;
+
+                    case WeightType.InverseDistanceSquared:
+                        w[i] = 1.0 / (d * d);
+                        break;
+                }
             }
 
             // ----------------------------
@@ -87,7 +104,7 @@ namespace Level_2026.Core
                 heights[unknowns[i]] = solution[i];
 
             // ----------------------------
-            // 5. RESIDUI + SIGMA0
+            // 5. SIGMA0
             // ----------------------------
             var residuals = A * solution - b;
 
