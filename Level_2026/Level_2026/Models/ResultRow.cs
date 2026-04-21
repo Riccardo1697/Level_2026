@@ -2,18 +2,18 @@
 {
     public class ResultRow
     {
-        public string Linea { get; set; }
-        public string Correzione { get; set; }
-        public string Peso { get; set; }
-        public string Nodo { get; set; }
+        public string? Linea { get; set; }
+        public string? Correzione { get; set; }
+        public string? Peso { get; set; }
+
+        public string? Nod { get; set; }
         public double? Quota { get; set; }
 
-        public string NodoTo { get; set; }
-        public double? Distanza { get; set; }
-        public double? QuotaComp { get; set; }
-        public double? DeltaQ { get; set; }
-        public double? Dh { get; set; }
+        public string? Contrassegno { get; set; }
+        public double? D { get; set; }
 
-        public string RowType { get; set; } // header / data / separator
+        public double? QCompensata { get; set; }
+        public double? dQCalcolo { get; set; }
+        public double? Dh { get; set; }
     }
 }

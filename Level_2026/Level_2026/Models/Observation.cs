@@ -2,9 +2,11 @@
 {
     public class Observation
     {
-        public required string Line { get; set; }
-        public required string From { get; set; }
-        public required string To { get; set; }
+        public string Line { get; set; } = "";
+        public bool ShowLine { get; set; } = false;
+        public string From { get; set; } = "";
+        public string To { get; set; } = "";
+
         public double Dh { get; set; }
         public double Dist { get; set; }
     }

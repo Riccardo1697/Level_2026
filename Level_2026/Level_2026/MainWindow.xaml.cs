@@ -3,7 +3,11 @@ using Level_2026.IO;
 using Level_2026.Models;
 using Level_2026.Services;
 using Microsoft.Win32;
+using OfficeOpenXml;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
 
@@ -44,76 +48,119 @@ namespace Level_2026
         }
 
         // ----------------------------
-        // CARICA FILE EXCEL
+        // PARSER SICURO
+        // ----------------------------
+        private static double ParseDouble(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+                return 0;
+
+            return double.Parse(
+                s.Trim().Replace(",", "."),
+                CultureInfo.InvariantCulture
+            );
+        }
+
+        // ----------------------------
+        // CARICA EXCEL
+        // ----------------------------
+        public static List<Observation> LoadFromInputExcel()
+        {
+            string path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                "INPUT.xlsx"
+            );
+
+            if (!File.Exists(path))
+                throw new Exception("File INPUT.xlsx non trovato sul Desktop");
+
+            ExcelPackage.License.SetNonCommercialOrganization("Level2026");
+
+            var list = new List<Observation>();
+
+            using var package = new ExcelPackage(new FileInfo(path));
+            var ws = package.Workbook.Worksheets.FirstOrDefault();
+
+            if (ws == null)
+                throw new Exception("Nessun foglio Excel trovato");
+
+            int row = 2;
+            string currentLine = "";
+
+            while (true)
+            {
+                var da = ws.Cells[row, 2].Text;
+                var a = ws.Cells[row, 3].Text;
+
+                if (string.IsNullOrWhiteSpace(da) && string.IsNullOrWhiteSpace(a))
+                    break;
+
+                var dhText = ws.Cells[row, 4].Text;
+                var distText = ws.Cells[row, 5].Text;
+                var linea = ws.Cells[row, 1].Text;
+
+                if (!string.IsNullOrWhiteSpace(linea))
+                    currentLine = linea;
+
+                list.Add(new Observation
+                {
+                    Line = currentLine,
+                    From = da,
+                    To = a,
+                    Dh = ParseDouble(dhText),
+                    Dist = ParseDouble(distText)
+                });
+
+                row++;
+            }
+
+            return list;
+        }
+
+        // ----------------------------
+        // CARICA INPUT
         // ----------------------------
         private void Carica_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new OpenFileDialog
+            try
             {
-                Filter = "Excel (*.xlsx)|*.xlsx"
-            };
+                _observations = LoadFromInputExcel();
 
-            if (dialog.ShowDialog() != true) return;
+                var nodes = _observations
+                    .SelectMany(o => new[] { o.From, o.To })
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
 
-            _observations = ExcelReader.Read(dialog.FileName);
+                ListNodes.ItemsSource = nodes;
 
-            // Estrazione nodi
-            var nodes = _observations
-                .SelectMany(o => new[] { o.From, o.To })
-                .Distinct()
-                .ToList();
+                GridFixed.ItemsSource = _fixed
+                    .Select(x => new { Nodo = x.Key, Quota = x.Value })
+                    .ToList();
 
-            // UI update
-            ListNodes.ItemsSource = nodes;
-           
-            GridFixed.ItemsSource = _fixed.ToList();
+                GridRete.ItemsSource = _observations;
 
-            GridRete.ItemsSource = _observations;
+                StatusText.Text = "Caricato INPUT.xlsx";
 
-            StatusText.Text = $"Caricato: {nodes.Count} nodi, {_observations.Count} osservazioni";
-
-            // LOG
-            Log("=== INPUT CARICATO ===");
-            Log($"File: {dialog.FileName}");
-            Log($"Osservazioni: {_observations.Count}");
-            Log($"Nodi: {nodes.Count}");
-        }
-
-        private void RemoveFixed_Click(object sender, RoutedEventArgs e)
-        {
-            if (GridFixed.SelectedItem == null)
-                return;
-
-            var item = GridFixed.SelectedItem;
-
-            // recupera il nodo dalla riga selezionata
-            var node = item.GetType().GetProperty("Nodo")?.GetValue(item)?.ToString();
-
-            if (node == null)
-                return;
-
-            if (_fixed.ContainsKey(node))
-                _fixed.Remove(node);
-
-            // refresh tabella
-            GridFixed.ItemsSource = null;
-            GridFixed.ItemsSource = _fixed.Select(x => new { Nodo = x.Key, Quota = x.Value });
-
-            Log($"Caposaldo rimosso: {node}");
+                Log("=== INPUT CARICATO ===");
+                Log($"Osservazioni: {_observations.Count}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         // ----------------------------
-        // AGGIUNGI / AGGIORNA CAPOSALDO
+        // FIXED POINTS
         // ----------------------------
         private void AddFixed_Click(object sender, RoutedEventArgs e)
         {
-            if (ListNodes.SelectedItem == null)
+            if (ListNodes.SelectedItem is not string node)
             {
                 MessageBox.Show("Seleziona un nodo");
                 return;
             }
-
-            string node = ListNodes.SelectedItem.ToString()!;
 
             if (!double.TryParse(TxtQuota.Text.Replace(",", "."), out double quota))
             {
@@ -123,12 +170,30 @@ namespace Level_2026
 
             _fixed[node] = quota;
 
-            // refresh tabella
-            GridFixed.ItemsSource = null;
             GridFixed.ItemsSource = _fixed
-                .Select(x => new { Nodo = x.Key, Quota = x.Value });
+                .Select(x => new { Nodo = x.Key, Quota = x.Value })
+                .ToList();
 
             TxtQuota.Clear();
+        }
+
+        private void RemoveFixed_Click(object sender, RoutedEventArgs e)
+        {
+            if (GridFixed.SelectedItem == null) return;
+
+            var nodo = GridFixed.SelectedItem
+                .GetType()
+                .GetProperty("Nodo")?
+                .GetValue(GridFixed.SelectedItem)?
+                .ToString();
+
+            if (nodo == null) return;
+
+            _fixed.Remove(nodo);
+
+            GridFixed.ItemsSource = _fixed
+                .Select(x => new { Nodo = x.Key, Quota = x.Value })
+                .ToList();
         }
 
         // ----------------------------
@@ -136,14 +201,13 @@ namespace Level_2026
         // ----------------------------
         private void Compensa_Click(object sender, RoutedEventArgs e)
         {
-            if (_observations.Count == 0) return;
-            if (_fixed.Count == 0)
+            if (_observations.Count == 0 || _fixed.Count == 0)
             {
-                MessageBox.Show("Inserire almeno un caposaldo");
+                MessageBox.Show("Carica dati e capisaldi");
                 return;
             }
 
-            WeightType weight = rbInvD2.IsChecked == true
+            var weight = rbInvD2.IsChecked == true
                 ? WeightType.InverseDistanceSquared
                 : WeightType.InverseDistance;
 
@@ -153,75 +217,66 @@ namespace Level_2026
 
             var grouped = _observations.GroupBy(o => o.Line);
 
-            foreach (var group in grouped)
+            string? lastLine = null;
+
+            foreach (var g in grouped)
             {
-                var obsList = group.ToList();
+                var list = g.ToList();
+                if (list.Count == 0) continue;
 
-                string nodoStart = obsList[0].From;
+                string line = g.Key;
 
-                double? quotaNodo = result.Heights.ContainsKey(nodoStart)
-                    ? result.Heights[nodoStart]
+                double sumDh = list.Sum(x => x.Dh);
+                double distTot = list.Sum(x => x.Dist);
+                double peso = distTot > 0 ? 1000.0 / distTot : 0;
+
+                string start = list.First().From;
+
+                double? quotaStart = result.Heights.ContainsKey(start)
+                    ? result.Heights[start]
                     : null;
 
-                // PESO MEDIO (come Python)
-                double peso = obsList.Average(o =>
-                {
-                    double d = Math.Max(o.Dist, 1e-12);
-                    return weight == WeightType.InverseDistanceSquared ? 1 / (d * d) : 1 / d;
-                });
+                double? correzione = sumDh;
 
-                // CORREZIONE (mock stile Python)
-                double correzione = obsList.Sum(o => o.Dh) - (quotaNodo ?? 0);
-
-                // HEADER LINEA
+                // HEADER LINEA (solo cambio linea)
                 rows.Add(new ResultRow
                 {
-                    Linea = group.Key,
-                    Correzione = $"{correzione * 1000:+0.00;-0.00} mm",
-                    Peso = $"{peso:F2}",
-                    Nodo = nodoStart,
-                    Quota = quotaNodo,
-                    RowType = "header"
+                    Linea = (line != lastLine) ? line : null,
+                    Correzione = $"{correzione * 1000:+0.00;-0.00}",
+                    Peso = peso.ToString("F2"),
+                    Nod = start,
+                    Quota = quotaStart
                 });
 
-                string prev = nodoStart;
+                lastLine = line;
 
-                foreach (var o in obsList)
+                string prev = start;
+
+                foreach (var o in list)
                 {
                     string to = o.To;
 
                     double? qPrev = result.Heights.ContainsKey(prev) ? result.Heights[prev] : null;
                     double? qTo = result.Heights.ContainsKey(to) ? result.Heights[to] : null;
 
-                    double? dQ = (qPrev.HasValue && qTo.HasValue)
-                        ? qTo - qPrev
-                        : null;
-
                     rows.Add(new ResultRow
                     {
-                        NodoTo = to,
-                        Distanza = o.Dist,
-                        QuotaComp = qTo,
-                        DeltaQ = dQ,
+                        Linea = null,
+                        Contrassegno = to,
+                        D = o.Dist,
                         Dh = o.Dh,
-                        RowType = "data"
+                        QCompensata = qTo,
+                        dQCalcolo = (qPrev.HasValue && qTo.HasValue) ? qTo - qPrev : null
                     });
 
                     prev = to;
                 }
-
-                // separatore
-                rows.Add(new ResultRow
-                {
-                    Nodo = "—",
-                    RowType = "separator"
-                });
             }
 
             GridResult.ItemsSource = rows;
 
-            StatusText.Text = $"Compensazione completata - Sigma0 = {result.Sigma0:F6}";
-            Log($"Sigma0: {result.Sigma0:F6}");
+            StatusText.Text = $"Sigma0 = {result.Sigma0:F6}";
+            Log($"Sigma0 = {result.Sigma0:F6}");
 
             ShowComp_Click(null, null);
         }

@@ -17,7 +17,6 @@
         <!-- ================= TOP BAR ================= -->
         <DockPanel Grid.Row="0" Background="#EAEAEA" Margin="5">
 
-            <!-- NAV -->
             <StackPanel Orientation="Horizontal">
 
                 <Button Content="Input"
@@ -104,13 +103,22 @@
 
                             </StackPanel>
 
+                            <!-- FIXED GRID -->
                             <DataGrid x:Name="GridFixed"
                                       Height="150"
-                                      AutoGenerateColumns="False">
+                                      AutoGenerateColumns="False"
+                                      Margin="0,10,0,0">
 
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Nodo" Binding="{Binding Key}" Width="*"/>
-                                    <DataGridTextColumn Header="Quota" Binding="{Binding Value}" Width="*"/>
+
+                                    <DataGridTextColumn Header="Nodo"
+                                                        Binding="{Binding Nodo}"
+                                                        Width="*"/>
+
+                                    <DataGridTextColumn Header="Quota (m)"
+                                                        Binding="{Binding Quota}"
+                                                        Width="*"/>
+
                                 </DataGrid.Columns>
 
                             </DataGrid>
@@ -119,7 +127,6 @@
 
                     </GroupBox>
 
-                    <!-- RUN -->
                     <Button Content="Esegui compensazione"
                             Height="40"
                             Margin="0,15,0,0"
@@ -135,7 +142,7 @@
                         <RowDefinition Height="2*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- RETE -->
+                    <!-- RETE INPUT -->
                     <GroupBox Header="Rete di livellazione">
 
                         <DataGrid x:Name="GridRete"
@@ -144,10 +151,25 @@
 
                             <DataGrid.Columns>
 
-                                <DataGridTextColumn Header="Da" Binding="{Binding From}" Width="*"/>
-                                <DataGridTextColumn Header="A" Binding="{Binding To}" Width="*"/>
-                                <DataGridTextColumn Header="Δh" Binding="{Binding Dh}" Width="*"/>
-                                <DataGridTextColumn Header="Distanza" Binding="{Binding Dist}" Width="*"/>
+                                <DataGridTextColumn Header="Linea"
+                                                    Binding="{Binding Line}"
+                                                    Width="80"/>
+
+                                <DataGridTextColumn Header="Da"
+                                                    Binding="{Binding From}"
+                                                    Width="*"/>
+
+                                <DataGridTextColumn Header="A"
+                                                    Binding="{Binding To}"
+                                                    Width="*"/>
+
+                                <DataGridTextColumn Header="Δh medio (m)"
+                                                    Binding="{Binding Dh}"
+                                                    Width="120"/>
+
+                                <DataGridTextColumn Header="D min (m)"
+                                                    Binding="{Binding Dist}"
+                                                    Width="120"/>
 
                             </DataGrid.Columns>
 
@@ -180,8 +202,45 @@
 
                         <DataGrid.Columns>
 
-                            <DataGridTextColumn Header="Nodo" Binding="{Binding Nodo}" Width="*"/>
-                            <DataGridTextColumn Header="Quota" Binding="{Binding Quota}" Width="*"/>
+                            <DataGridTextColumn Header="Linea"
+                                                Binding="{Binding Linea}"
+                                                Width="70"/>
+
+                            <DataGridTextColumn Header="Correzione"
+                                                Binding="{Binding Correzione}"
+                                                Width="100"/>
+
+                            <DataGridTextColumn Header="Peso"
+                                                Binding="{Binding Peso}"
+                                                Width="80"/>
+
+                            <DataGridTextColumn Header="Nod."
+                                                Binding="{Binding Nod}"
+                                                Width="80"/>
+
+                            <DataGridTextColumn Header="Quota (m)"
+                                                Binding="{Binding Quota}"
+                                                Width="110"/>
+
+                            <DataGridTextColumn Header="Contrassegno"
+                                                Binding="{Binding Contrassegno}"
+                                                Width="120"/>
+
+                            <DataGridTextColumn Header="D (m)"
+                                                Binding="{Binding D}"
+                                                Width="90"/>
+
+                            <DataGridTextColumn Header="Q compensata (m)"
+                                                Binding="{Binding QCompensata}"
+                                                Width="150"/>
+
+                            <DataGridTextColumn Header="dQ calcolo"
+                                                Binding="{Binding dQCalcolo}"
+                                                Width="110"/>
+
+                            <DataGridTextColumn Header="dh misura"
+                                                Binding="{Binding Dh}"
+                                                Width="100"/>
 
                         </DataGrid.Columns>
 
